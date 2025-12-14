@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional, Tuple, List, Callable
 from PIL import Image, ImageTk
 import customtkinter as ctk
+import tkinter as tk
 from tkinter import filedialog, messagebox
 
 from video_to_powerpoint import __version__
@@ -218,6 +219,125 @@ class MiniModeWindow(ctk.CTkToplevel):
         self.destroy()
 
 
+class RegionOverlay:
+    """Visual border showing the capture region using a Canvas with dashed lines.
+
+    Creates a single transparent window with a dashed rectangle around the
+    selected capture region. Uses Windows transparency for click-through.
+    """
+
+    BORDER_WIDTH = 3
+    DASH_PATTERN = (8, 4)  # (dash_length, gap_length)
+    COLOR_SELECTED = "#3B8ED0"  # Blue - region selected
+    COLOR_RECORDING = "#FF4444"  # Red - recording in progress
+
+    def __init__(self, parent: ctk.CTk) -> None:
+        """Initialize the region overlay.
+
+        Args:
+            parent: Parent window (main app).
+        """
+        self._parent = parent
+        self._window: Optional[tk.Toplevel] = None
+        self._canvas: Optional[tk.Canvas] = None
+        self._region: Optional[Tuple[int, int, int, int]] = None
+        self._color = self.COLOR_SELECTED
+        self._visible = False
+        self._rect_id: Optional[int] = None
+
+    def show(self, region: Tuple[int, int, int, int], color: Optional[str] = None) -> None:
+        """Show the overlay around the specified region.
+
+        Args:
+            region: Tuple of (x1, y1, x2, y2) coordinates.
+            color: Optional color override.
+        """
+        # Clean up existing window
+        self.hide()
+
+        self._region = region
+        if color:
+            self._color = color
+
+        x1, y1, x2, y2 = region
+        region_width = x2 - x1
+        region_height = y2 - y1
+
+        # Position overlay OUTSIDE the capture region
+        # Add padding so the dashed border doesn't overlap the capture area
+        padding = self.BORDER_WIDTH + 2  # Border width + small gap
+
+        overlay_x = x1 - padding
+        overlay_y = y1 - padding
+        overlay_width = region_width + (padding * 2)
+        overlay_height = region_height + (padding * 2)
+
+        # Create transparent window
+        self._window = tk.Toplevel(self._parent)
+        self._window.overrideredirect(True)  # No window decorations
+        self._window.attributes("-topmost", True)  # Always on top
+        self._window.attributes("-transparentcolor", "#000001")  # Windows transparency
+        self._window.geometry(f"{overlay_width}x{overlay_height}+{overlay_x}+{overlay_y}")
+
+        # Canvas with transparent background
+        self._canvas = tk.Canvas(
+            self._window,
+            width=overlay_width,
+            height=overlay_height,
+            bg="#000001",
+            highlightthickness=0,
+        )
+        self._canvas.pack(fill="both", expand=True)
+
+        # Draw dashed rectangle at canvas edges (which is outside capture region)
+        offset = self.BORDER_WIDTH // 2
+        self._rect_id = self._canvas.create_rectangle(
+            offset,
+            offset,
+            overlay_width - offset - 1,
+            overlay_height - offset - 1,
+            outline=self._color,
+            width=self.BORDER_WIDTH,
+            dash=self.DASH_PATTERN,
+        )
+
+        self._visible = True
+
+    def set_color(self, color: str) -> None:
+        """Change the border color.
+
+        Args:
+            color: New color (hex string).
+        """
+        self._color = color
+        if self._canvas and self._rect_id is not None:
+            try:
+                self._canvas.itemconfig(self._rect_id, outline=color)
+            except Exception:
+                pass  # Canvas might be destroyed
+
+    def hide(self) -> None:
+        """Hide and destroy the overlay window."""
+        if self._window:
+            try:
+                self._window.destroy()
+            except Exception:
+                pass  # Window might already be destroyed
+        self._window = None
+        self._canvas = None
+        self._rect_id = None
+        self._visible = False
+
+    def destroy(self) -> None:
+        """Alias for hide() - destroy the overlay window."""
+        self.hide()
+
+    @property
+    def is_visible(self) -> bool:
+        """Check if the overlay is currently visible."""
+        return self._visible
+
+
 class VideoToPowerPointApp(ctk.CTk):
     """Main application window."""
 
@@ -239,6 +359,9 @@ class VideoToPowerPointApp(ctk.CTk):
         # Mini mode state
         self._mini_mode: Optional[MiniModeWindow] = None
         self._in_mini_mode = False
+
+        # Region overlay state
+        self._region_overlay: Optional[RegionOverlay] = None
 
         # Setup logging
         setup_logging(verbose=False)
@@ -490,6 +613,12 @@ class VideoToPowerPointApp(ctk.CTk):
             height = y2 - y1
             self.region_label.configure(text=f"{width}x{height} at ({x1}, {y1})")
             self._set_status(f"Region selected: {width}x{height}")
+
+            # Show blue overlay around the selected region
+            if self._region_overlay is not None:
+                self._region_overlay.destroy()
+            self._region_overlay = RegionOverlay(self)
+            self._region_overlay.show(self._region, color=RegionOverlay.COLOR_SELECTED)
         except Exception as e:
             logger.error(f"Region selection failed: {e}")
             messagebox.showerror("Error", f"Region selection failed: {e}")
@@ -564,6 +693,10 @@ class VideoToPowerPointApp(ctk.CTk):
         self.start_btn.configure(state="disabled", fg_color="gray")
         self.stop_btn.configure(state="normal", fg_color=["#3B8ED0", "#1F6AA5"])
         self._set_status("Capturing...")
+
+        # Change region overlay to red (recording indicator)
+        if self._region_overlay is not None:
+            self._region_overlay.set_color(RegionOverlay.COLOR_RECORDING)
 
         # Clear previous slides
         self._slides = []
@@ -712,6 +845,11 @@ class VideoToPowerPointApp(ctk.CTk):
 
         # Exit mini mode if active
         self._exit_mini_mode()
+
+        # Hide region overlay
+        if self._region_overlay is not None:
+            self._region_overlay.destroy()
+            self._region_overlay = None
 
         # Update UI
         self.start_btn.configure(state="normal", fg_color=["#3B8ED0", "#1F6AA5"])
