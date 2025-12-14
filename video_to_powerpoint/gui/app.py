@@ -426,6 +426,21 @@ class VideoToPowerPointApp(ctk.CTk):
         )
         self.stop_btn.pack(side="left", padx=5)
 
+        # Minimize button (only visible during capture)
+        self.minimize_btn = ctk.CTkButton(
+            btn_frame,
+            text="Minimize",
+            command=self._enter_mini_mode,
+            width=100,
+            height=40,
+            font=ctk.CTkFont(size=14),
+            fg_color="transparent",
+            border_width=1,
+        )
+        # Hidden by default - shown only during capture
+        self.minimize_btn.pack(side="left", padx=5)
+        self.minimize_btn.pack_forget()
+
     def _create_settings_panel(self) -> None:
         """Create the settings panel."""
         settings = ctk.CTkFrame(self)
@@ -692,6 +707,7 @@ class VideoToPowerPointApp(ctk.CTk):
         self._is_capturing = True
         self.start_btn.configure(state="disabled", fg_color="gray")
         self.stop_btn.configure(state="normal", fg_color=["#3B8ED0", "#1F6AA5"])
+        self.minimize_btn.pack(side="left", padx=5)  # Show minimize button
         self._set_status("Capturing...")
 
         # Change region overlay to red (recording indicator)
@@ -854,6 +870,7 @@ class VideoToPowerPointApp(ctk.CTk):
         # Update UI
         self.start_btn.configure(state="normal", fg_color=["#3B8ED0", "#1F6AA5"])
         self.stop_btn.configure(state="disabled", fg_color="gray")
+        self.minimize_btn.pack_forget()  # Hide minimize button
         self._set_status(f"Capture complete - {len(self._slides)} slides")
 
     def _update_timer(self) -> None:
