@@ -13,7 +13,8 @@ class Config:
         output_path: Path for the output file (without extension for multi-format).
         output_format: Output format(s) - 'pptx', 'pdf', 'images', or 'all'.
         interval: Time between captures in seconds.
-        threshold: MSE threshold for detecting slide changes (lower = more sensitive).
+        threshold: Threshold for detecting slide changes (interpretation depends on method).
+        method: Comparison method - 'mse', 'ssim', or 'clip'.
         stop_hotkey: Keyboard key to stop capture.
         monitor: Monitor index to capture from (0 = primary).
         region: Capture region as (x1, y1, x2, y2) or None for interactive selection.
@@ -24,6 +25,7 @@ class Config:
     output_format: Literal["pptx", "pdf", "images", "all"] = "pptx"
     interval: float = 5.0
     threshold: float = 0.005
+    method: Literal["mse", "ssim", "clip"] = "mse"
     stop_hotkey: str = "end"
     monitor: int = 0
     region: Optional[Tuple[int, int, int, int]] = None
@@ -47,8 +49,13 @@ class Config:
         if self.interval > 60:
             raise ValueError("Interval must be at most 60 seconds")
 
-        if not 0 < self.threshold < 1:
-            raise ValueError("Threshold must be between 0 and 1")
+        # Validate threshold based on method
+        if self.method == "mse":
+            if not 0 < self.threshold < 1:
+                raise ValueError("MSE threshold must be between 0 and 1 (exclusive)")
+        elif self.method in ("ssim", "clip"):
+            if not 0 < self.threshold <= 1:
+                raise ValueError(f"{self.method.upper()} threshold must be between 0 and 1")
 
         if self.monitor < 0:
             raise ValueError("Monitor index must be non-negative")

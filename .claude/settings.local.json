@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(dir:*)",
-      "Bash(git -C \"c:\\Users\\Hello\\Documents\\Video-to-PowerPoint\" log --oneline)"
+      "Bash(git -C \"c:\\Users\\Hello\\Documents\\Video-to-PowerPoint\" log --oneline)",
+      "Bash(python -m py_compile:*)"
     ]
   }
 }

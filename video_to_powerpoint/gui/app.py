@@ -505,6 +505,18 @@ class VideoToPowerPointApp(ctk.CTk):
         )
         self.sensitivity_dropdown.pack(side="left", padx=(0, 20))
 
+        # Comparison method
+        ctk.CTkLabel(row2, text="Method:").pack(side="left", padx=(0, 5))
+        self.method_var = ctk.StringVar(value="MSE (Fast)")
+        self.method_dropdown = ctk.CTkComboBox(
+            row2,
+            variable=self.method_var,
+            values=["MSE (Fast)", "SSIM (Fast)", "CLIP AI (Accurate)"],
+            width=150,
+            state="readonly",
+        )
+        self.method_dropdown.pack(side="left", padx=(0, 20))
+
         # Row 3: Output settings
         row3 = ctk.CTkFrame(settings, fg_color="transparent")
         row3.pack(fill="x", padx=10, pady=5)
@@ -675,10 +687,20 @@ class VideoToPowerPointApp(ctk.CTk):
             return "all"
         return "pptx"
 
+    def _get_comparison_method(self) -> str:
+        """Get comparison method from dropdown selection."""
+        method_map = {
+            "MSE (Fast)": "mse",
+            "SSIM (Fast)": "ssim",
+            "CLIP AI (Accurate)": "clip",
+        }
+        return method_map.get(self.method_var.get(), "mse")
+
     def _get_threshold(self) -> float:
-        """Get threshold from sensitivity setting."""
+        """Get threshold from sensitivity setting and comparison method."""
         sensitivity = self.sensitivity_var.get().lower()
-        return ImageComparator.threshold_from_sensitivity(sensitivity)
+        method = self._get_comparison_method()
+        return ImageComparator.threshold_from_sensitivity(sensitivity, method)
 
     def _set_status(self, text: str) -> None:
         """Update status bar text."""
@@ -746,8 +768,11 @@ class VideoToPowerPointApp(ctk.CTk):
                 region=self._region,
             )
 
+            # Get comparison method
+            method = self._get_comparison_method()
+
             with ScreenCapture() as capture:
-                comparator = ImageComparator(threshold=config.threshold)
+                comparator = ImageComparator(threshold=config.threshold, method=method)
                 presentation = PresentationManager()
                 exporter = Exporter()
 

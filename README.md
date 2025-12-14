@@ -81,6 +81,7 @@ Options:
   -i, --interval SECONDS    Capture interval in seconds (default: 5)
   -t, --threshold FLOAT     Change sensitivity 0-1 (default: 0.005)
   -s, --sensitivity PRESET  Sensitivity preset: low, medium, high
+  -M, --method METHOD       Comparison method: mse, ssim, clip (default: mse)
   -m, --monitor NUMBER      Monitor to capture (default: 0 for primary)
   -r, --region X1,Y1,X2,Y2  Preset capture region (skip selection)
   -k, --hotkey KEY          Stop hotkey (default: end)
@@ -118,6 +119,11 @@ video-to-ppt -f all -o my_slides
 video-to-ppt -m 2 -o presentation
 ```
 
+**Use AI-powered comparison (more accurate):**
+```bash
+video-to-ppt -M clip -o presentation
+```
+
 **List available monitors:**
 ```bash
 video-to-ppt --list-monitors
@@ -135,6 +141,20 @@ video-to-ppt --list-monitors
 
 Lower threshold values = more sensitive to changes.
 
+### Comparison Methods
+
+| Method | Speed | Accuracy | Best For |
+|--------|-------|----------|----------|
+| `mse` | ⚡ Fast | Basic | Clean presentations |
+| `ssim` | ⚡ Fast | Good | Similar to MSE, better perceptual |
+| `clip` | 🐢 Slower | Excellent | Complex videos, animations, presenter overlays |
+
+**MSE (Mean Squared Error)** - Default method. Fast pixel-level comparison. Works well for clean presentations with minimal visual noise.
+
+**SSIM (Structural Similarity Index)** - Similar speed to MSE but better at detecting perceptual differences in image structure.
+
+**CLIP (AI-Powered)** - Uses neural network embeddings to understand image content semantically. More robust to visual noise like animations, mouse cursors, and video player UI.
+
 ### Capture Interval
 
 The interval (in seconds) between screenshots. Default is 5 seconds.
@@ -151,6 +171,7 @@ The graphical interface provides:
 - **Settings Panel**:
   - Interval slider (1-30 seconds)
   - Sensitivity dropdown (Low/Medium/High)
+  - Comparison method selection (MSE/SSIM/CLIP AI)
   - Output format selection
 - **Live Preview** - Thumbnails of captured slides
 - **Progress Tracking** - Slide count and elapsed time
@@ -205,9 +226,11 @@ presentation.save()
   - `pynput` - Keyboard/mouse input handling
   - `Pillow` - Image processing
   - `python-pptx` - PowerPoint file creation
-  - `scikit-image` - Image comparison
+  - `scikit-image` - Image comparison (MSE, SSIM)
   - `customtkinter` - Modern GUI framework
   - `img2pdf` - PDF export
+  - `sentence-transformers` - CLIP model for AI-powered comparison
+  - `torch` - PyTorch for neural network inference
 
 ## Building Standalone Executable
 
