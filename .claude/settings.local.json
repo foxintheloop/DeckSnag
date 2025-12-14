@@ -3,7 +3,10 @@
     "allow": [
       "Bash(dir:*)",
       "Bash(git -C \"c:\\Users\\Hello\\Documents\\Video-to-PowerPoint\" log --oneline)",
-      "Bash(python -m py_compile:*)"
+      "Bash(python -m py_compile:*)",
+      "Bash(Remove-Item -Recurse -Force \"c:\\Users\\Hello\\Documents\\Video-to-PowerPoint\\video_to_powerpoint\")",
+      "Bash(Remove-Item -Force \"c:\\Users\\Hello\\Documents\\Video-to-PowerPoint\\video_to_powerpoint.spec\")",
+      "Bash(del /f \"c:\\Users\\Hello\\Documents\\Video-to-PowerPoint\\video_to_powerpoint.spec\")"
     ]
   }
 }

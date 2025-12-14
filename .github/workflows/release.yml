@@ -11,14 +11,14 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            artifact_name: video-to-ppt-windows.exe
-            asset_name: video-to-ppt-windows.exe
+            artifact_name: decksnag-windows.exe
+            asset_name: decksnag-windows.exe
           - os: macos-latest
-            artifact_name: video-to-ppt-macos
-            asset_name: video-to-ppt-macos
+            artifact_name: decksnag-macos
+            asset_name: decksnag-macos
           - os: ubuntu-latest
-            artifact_name: video-to-ppt-linux
-            asset_name: video-to-ppt-linux
+            artifact_name: decksnag-linux
+            asset_name: decksnag-linux
 
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller video_to_powerpoint.spec
+          pyinstaller decksnag.spec
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

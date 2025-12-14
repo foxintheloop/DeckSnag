@@ -10,15 +10,15 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
-from video_to_powerpoint import __version__
-from video_to_powerpoint.config import Config
-from video_to_powerpoint.capture import ScreenCapture
-from video_to_powerpoint.comparison import ImageComparator
-from video_to_powerpoint.presentation import PresentationManager
-from video_to_powerpoint.exporter import Exporter
-from video_to_powerpoint.utils import setup_logging, format_duration
+from decksnag import __version__
+from decksnag.config import Config
+from decksnag.capture import ScreenCapture
+from decksnag.comparison import ImageComparator
+from decksnag.presentation import PresentationManager
+from decksnag.exporter import Exporter
+from decksnag.utils import setup_logging, format_duration
 
-logger = logging.getLogger("video_to_powerpoint")
+logger = logging.getLogger("decksnag")
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("System")  # Modes: "System", "Dark", "Light"
@@ -338,13 +338,13 @@ class RegionOverlay:
         return self._visible
 
 
-class VideoToPowerPointApp(ctk.CTk):
+class DeckSnagApp(ctk.CTk):
     """Main application window."""
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.title(f"Video to PowerPoint v{__version__}")
+        self.title(f"DeckSnag v{__version__}")
         self.geometry("900x700")
         self.minsize(800, 600)
 
@@ -395,7 +395,7 @@ class VideoToPowerPointApp(ctk.CTk):
 
         title = ctk.CTkLabel(
             header,
-            text="Video to PowerPoint",
+            text="DeckSnag",
             font=ctk.CTkFont(size=24, weight="bold"),
         )
         title.pack(side="left", padx=10, pady=10)
@@ -975,7 +975,7 @@ class VideoToPowerPointApp(ctk.CTk):
 
 def main() -> None:
     """Launch the GUI application."""
-    app = VideoToPowerPointApp()
+    app = DeckSnagApp()
     app.mainloop()
 
 

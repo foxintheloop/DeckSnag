@@ -1,4 +1,4 @@
-# Video to PowerPoint
+# DeckSnag
 
 [![CI](https://github.com/dplem/Video-to-PowerPoint/actions/workflows/ci.yml/badge.svg)](https://github.com/dplem/Video-to-PowerPoint/actions/workflows/ci.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
@@ -6,7 +6,7 @@
 
 **Automatically capture video presentations and convert them to PowerPoint slides.**
 
-When watching an online course, webinar, or live presentation where slides aren't provided, Video to PowerPoint automatically detects slide changes and saves them to a PowerPoint file. No more manual screenshots!
+When watching an online course, webinar, or live presentation where slides aren't provided, DeckSnag automatically detects slide changes and saves them to a PowerPoint file. No more manual screenshots!
 
 ## Features
 
@@ -18,13 +18,14 @@ When watching an online course, webinar, or live presentation where slides aren'
 - **Modern GUI** - Clean, intuitive interface built with CustomTkinter
 - **Professional CLI** - Full command-line interface for automation
 - **Cross-Platform** - Works on Windows, macOS, and Linux
+- **AI-Powered Comparison** - CLIP neural network for robust slide detection
 
 ## Installation
 
 ### From PyPI (Recommended)
 
 ```bash
-pip install video-to-powerpoint
+pip install decksnag
 ```
 
 ### From Source
@@ -48,13 +49,13 @@ pip install -e ".[dev]"
 Launch the graphical interface:
 
 ```bash
-video-to-ppt --gui
+decksnag --gui
 ```
 
 Or use Python module syntax:
 
 ```bash
-python -m video_to_powerpoint --gui
+python -m decksnag --gui
 ```
 
 ### CLI Mode
@@ -62,7 +63,7 @@ python -m video_to_powerpoint --gui
 Basic usage with interactive region selection:
 
 ```bash
-video-to-ppt -o my_presentation.pptx
+decksnag -o my_presentation.pptx
 ```
 
 The program will:
@@ -73,7 +74,7 @@ The program will:
 ## CLI Reference
 
 ```
-video-to-ppt [OPTIONS]
+decksnag [OPTIONS]
 
 Options:
   -o, --output PATH         Output file path (default: ./presentation)
@@ -96,37 +97,37 @@ Options:
 
 **Export as PDF:**
 ```bash
-video-to-ppt -o lecture -f pdf
+decksnag -o lecture -f pdf
 ```
 
 **High sensitivity for subtle slide changes:**
 ```bash
-video-to-ppt -s high -i 3
+decksnag -s high -i 3
 ```
 
 **Capture specific region (skip interactive selection):**
 ```bash
-video-to-ppt -r 100,100,1920,1080 -o presentation
+decksnag -r 100,100,1920,1080 -o presentation
 ```
 
 **Export to all formats:**
 ```bash
-video-to-ppt -f all -o my_slides
+decksnag -f all -o my_slides
 ```
 
 **Capture from second monitor:**
 ```bash
-video-to-ppt -m 2 -o presentation
+decksnag -m 2 -o presentation
 ```
 
 **Use AI-powered comparison (more accurate):**
 ```bash
-video-to-ppt -M clip -o presentation
+decksnag -M clip -o presentation
 ```
 
 **List available monitors:**
 ```bash
-video-to-ppt --list-monitors
+decksnag --list-monitors
 ```
 
 ## Configuration
@@ -145,9 +146,9 @@ Lower threshold values = more sensitive to changes.
 
 | Method | Speed | Accuracy | Best For |
 |--------|-------|----------|----------|
-| `mse` | ⚡ Fast | Basic | Clean presentations |
-| `ssim` | ⚡ Fast | Good | Similar to MSE, better perceptual |
-| `clip` | 🐢 Slower | Excellent | Complex videos, animations, presenter overlays |
+| `mse` | Fast | Basic | Clean presentations |
+| `ssim` | Fast | Good | Similar to MSE, better perceptual |
+| `clip` | Slower | Excellent | Complex videos, animations, presenter overlays |
 
 **MSE (Mean Squared Error)** - Default method. Fast pixel-level comparison. Works well for clean presentations with minimal visual noise.
 
@@ -176,22 +177,23 @@ The graphical interface provides:
 - **Live Preview** - Thumbnails of captured slides
 - **Progress Tracking** - Slide count and elapsed time
 - **Start/Stop Controls** - Easy capture management
+- **Mini Mode** - Compact floating widget during capture
 
 ## How It Works
 
 1. **Region Selection**: You select an area of your screen to monitor
 2. **Initial Capture**: Takes a screenshot of the selected region
 3. **Continuous Monitoring**: Every N seconds, takes a new screenshot
-4. **Change Detection**: Compares new screenshot to previous using Mean Squared Error (MSE)
+4. **Change Detection**: Compares new screenshot to previous using selected method (MSE, SSIM, or CLIP)
 5. **Slide Addition**: If change exceeds threshold, adds new slide to presentation
 6. **Export**: Saves to your chosen format when you stop capture
 
 ## API Usage
 
-You can also use Video to PowerPoint as a Python library:
+You can also use DeckSnag as a Python library:
 
 ```python
-from video_to_powerpoint import ScreenCapture, ImageComparator, PresentationManager
+from decksnag import ScreenCapture, ImageComparator, PresentationManager
 
 # Initialize components
 capture = ScreenCapture()
@@ -238,7 +240,7 @@ Create a standalone executable that doesn't require Python:
 
 ```bash
 pip install pyinstaller
-pyinstaller video_to_powerpoint.spec
+pyinstaller decksnag.spec
 ```
 
 The executable will be in the `dist/` folder.
@@ -264,10 +266,10 @@ pip install -e ".[dev]"
 pytest
 
 # Run linting
-ruff check video_to_powerpoint/
+ruff check decksnag/
 
 # Format code
-black video_to_powerpoint/ tests/
+black decksnag/ tests/
 ```
 
 ## Troubleshooting

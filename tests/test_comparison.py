@@ -2,7 +2,7 @@
 
 import pytest
 from PIL import Image
-from video_to_powerpoint.comparison import ImageComparator
+from decksnag.comparison import ImageComparator
 
 
 class TestImageComparator:

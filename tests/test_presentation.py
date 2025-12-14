@@ -2,7 +2,7 @@
 
 import pytest
 from pathlib import Path
-from video_to_powerpoint.presentation import PresentationManager
+from decksnag.presentation import PresentationManager
 
 
 class TestPresentationManager:

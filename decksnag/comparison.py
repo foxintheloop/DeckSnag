@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 from skimage.metrics import mean_squared_error, structural_similarity
 
-logger = logging.getLogger("video_to_powerpoint")
+logger = logging.getLogger("decksnag")
 
 # Type for comparison methods
 ComparisonMethod = Literal["mse", "ssim", "clip"]
@@ -112,7 +112,7 @@ class ImageComparator:
         except ImportError:
             raise ImportError(
                 "CLIP comparison requires 'sentence-transformers' and 'torch'. "
-                "Try reinstalling: pip install --upgrade video-to-powerpoint"
+                "Try reinstalling: pip install --upgrade decksnag"
             )
 
     def compute_mse(self, img1: Image.Image, img2: Image.Image) -> float:

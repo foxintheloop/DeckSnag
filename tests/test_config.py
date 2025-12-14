@@ -2,7 +2,7 @@
 
 import pytest
 from pathlib import Path
-from video_to_powerpoint.config import Config
+from decksnag.config import Config
 
 
 class TestConfig:

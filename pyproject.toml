@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "video-to-powerpoint"
+name = "decksnag"
 version = "2.0.0"
 description = "Capture video presentations and convert them to PowerPoint slides automatically"
 readme = "README.md"
@@ -11,7 +11,7 @@ license = {text = "MIT"}
 authors = [
     {name = "Derek Plemons", email = "plemons.derek@gmail.com"}
 ]
-keywords = ["powerpoint", "screenshot", "presentation", "video", "capture", "slides"]
+keywords = ["powerpoint", "screenshot", "presentation", "video", "capture", "slides", "decksnag"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -59,14 +59,14 @@ Repository = "https://github.com/dplem/Video-to-PowerPoint"
 Issues = "https://github.com/dplem/Video-to-PowerPoint/issues"
 
 [project.scripts]
-video-to-ppt = "video_to_powerpoint.cli:main"
+decksnag = "decksnag.cli:main"
 
 [project.gui-scripts]
-video-to-ppt-gui = "video_to_powerpoint.gui:main"
+decksnag-gui = "decksnag.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["video_to_powerpoint*"]
+include = ["decksnag*"]
 
 [tool.black]
 line-length = 100
@@ -99,4 +99,4 @@ disallow_untyped_defs = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "-v --cov=video_to_powerpoint --cov-report=term-missing"
+addopts = "-v --cov=decksnag --cov-report=term-missing"

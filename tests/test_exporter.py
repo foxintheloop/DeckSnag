@@ -2,7 +2,7 @@
 
 import pytest
 from pathlib import Path
-from video_to_powerpoint.exporter import Exporter
+from decksnag.exporter import Exporter
 
 
 class TestExporter:

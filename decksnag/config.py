@@ -1,4 +1,4 @@
-"""Configuration management for Video to PowerPoint."""
+"""Configuration management for DeckSnag."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
