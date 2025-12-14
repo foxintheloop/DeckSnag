@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import List, Literal, Optional
 from PIL import Image
 
-logger = logging.getLogger("video_to_powerpoint")
+logger = logging.getLogger("decksnag")
 
 # Type alias for supported formats
 ExportFormat = Literal["pptx", "pdf", "images"]
@@ -53,7 +53,7 @@ class Exporter:
         if not self._slides:
             raise RuntimeError("No slides to export")
 
-        from video_to_powerpoint.presentation import PresentationManager
+        from decksnag.presentation import PresentationManager
 
         output_path = Path(output_path)
         if output_path.suffix.lower() != ".pptx":

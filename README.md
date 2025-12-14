@@ -1,37 +1,45 @@
-# Video to PowerPoint
+# DeckSnag
 
-[![CI](https://github.com/dplem/Video-to-PowerPoint/actions/workflows/ci.yml/badge.svg)](https://github.com/dplem/Video-to-PowerPoint/actions/workflows/ci.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Automatically capture video presentations and convert them to PowerPoint slides.**
+**Automatically capture video presentations and convert them to PowerPoint slides using AI-powered slide detection.**
 
-When watching an online course, webinar, or live presentation where slides aren't provided, Video to PowerPoint automatically detects slide changes and saves them to a PowerPoint file. No more manual screenshots!
+When watching an online course, webinar, or live presentation where slides aren't provided, DeckSnag automatically detects slide changes and saves them to a PowerPoint file. No more manual screenshots!
 
-## Features
+## Highlights
 
-- **Automatic Slide Detection** - Uses image comparison to detect when slides change
+- **AI-Powered Detection** - CLIP neural network understands slide content semantically
+- **Multiple Comparison Methods** - Choose between AI (CLIP), SSIM, or MSE based on your needs
 - **Multiple Output Formats** - Export to PowerPoint (.pptx), PDF, or image folder
-- **Multi-Monitor Support** - Choose which monitor to capture
-- **Adjustable Sensitivity** - Fine-tune detection for different presentation styles
-- **Customizable Hotkeys** - Choose your preferred key to stop capture
-- **Modern GUI** - Clean, intuitive interface built with CustomTkinter
-- **Professional CLI** - Full command-line interface for automation
+- **Modern GUI & CLI** - Use the intuitive graphical interface or automate with command-line
 - **Cross-Platform** - Works on Windows, macOS, and Linux
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [AI-Powered Slide Detection](#ai-powered-slide-detection)
+- [CLI Reference](#cli-reference)
+- [Configuration](#configuration)
+- [GUI Features](#gui-features)
+- [API Usage](#api-usage)
+- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
 
 ## Installation
 
 ### From PyPI (Recommended)
 
 ```bash
-pip install video-to-powerpoint
+pip install decksnag
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/dplem/Video-to-PowerPoint.git
-cd Video-to-PowerPoint
+git clone https://github.com/foxintheloop/DeckSnag.git
+cd DeckSnag
 pip install -e .
 ```
 
@@ -48,13 +56,19 @@ pip install -e ".[dev]"
 Launch the graphical interface:
 
 ```bash
-video-to-ppt --gui
+decksnag --gui
+```
+
+Or use the dedicated GUI command:
+
+```bash
+decksnag-gui
 ```
 
 Or use Python module syntax:
 
 ```bash
-python -m video_to_powerpoint --gui
+python -m decksnag --gui
 ```
 
 ### CLI Mode
@@ -62,7 +76,13 @@ python -m video_to_powerpoint --gui
 Basic usage with interactive region selection:
 
 ```bash
-video-to-ppt -o my_presentation.pptx
+decksnag -o my_presentation.pptx
+```
+
+**With AI-powered detection (recommended for complex presentations):**
+
+```bash
+decksnag -M clip -o my_presentation.pptx
 ```
 
 The program will:
@@ -70,10 +90,50 @@ The program will:
 2. Start capturing slides (press **END** key to stop)
 3. Save the presentation to the specified file
 
+## AI-Powered Slide Detection
+
+DeckSnag uses **CLIP (Contrastive Language-Image Pre-training)** from OpenAI for intelligent slide detection. Unlike traditional pixel-based methods, CLIP understands the semantic content of images.
+
+### Why Use AI Detection?
+
+| Scenario | Traditional (MSE/SSIM) | AI (CLIP) |
+|----------|------------------------|-----------|
+| Mouse cursor moving | May trigger false positives | Ignores minor visual noise |
+| Video player UI overlays | Detects as changes | Focuses on slide content |
+| Animations/transitions | Multiple false captures | Waits for content change |
+| Presenter video overlay | Constant false triggers | Understands slide vs presenter |
+| Lighting changes | Sensitive to brightness | Semantic understanding |
+
+### Comparison Methods
+
+| Method | Speed | Accuracy | Best For |
+|--------|-------|----------|----------|
+| `clip` | Slower | Excellent | Complex videos, animations, presenter overlays |
+| `ssim` | Fast | Good | Clean recordings with minimal noise |
+| `mse` | Fast | Basic | Simple, static presentations |
+
+**Enable AI detection:**
+
+```bash
+# CLI
+decksnag -M clip -o presentation
+
+# Or in GUI: Select "CLIP AI" from the comparison method dropdown
+```
+
+### How CLIP Works
+
+1. **Captures** a screenshot of the selected region
+2. **Encodes** the image into a semantic embedding vector using CLIP's vision transformer
+3. **Compares** the embedding with the previous slide using cosine similarity
+4. **Detects** a new slide when similarity drops below threshold (default: 0.85)
+
+This approach means CLIP understands that two slides with different text are different content, even if they look visually similar (same template, colors, layout).
+
 ## CLI Reference
 
 ```
-video-to-ppt [OPTIONS]
+decksnag [OPTIONS]
 
 Options:
   -o, --output PATH         Output file path (default: ./presentation)
@@ -81,6 +141,7 @@ Options:
   -i, --interval SECONDS    Capture interval in seconds (default: 5)
   -t, --threshold FLOAT     Change sensitivity 0-1 (default: 0.005)
   -s, --sensitivity PRESET  Sensitivity preset: low, medium, high
+  -M, --method METHOD       Comparison method: mse, ssim, clip (default: mse)
   -m, --monitor NUMBER      Monitor to capture (default: 0 for primary)
   -r, --region X1,Y1,X2,Y2  Preset capture region (skip selection)
   -k, --hotkey KEY          Stop hotkey (default: end)
@@ -93,47 +154,67 @@ Options:
 
 ### Examples
 
+**Use AI-powered comparison (recommended):**
+```bash
+decksnag -M clip -o presentation
+```
+
 **Export as PDF:**
 ```bash
-video-to-ppt -o lecture -f pdf
+decksnag -o lecture -f pdf
 ```
 
 **High sensitivity for subtle slide changes:**
 ```bash
-video-to-ppt -s high -i 3
+decksnag -s high -i 3
 ```
 
 **Capture specific region (skip interactive selection):**
 ```bash
-video-to-ppt -r 100,100,1920,1080 -o presentation
+decksnag -r 100,100,1920,1080 -o presentation
 ```
 
 **Export to all formats:**
 ```bash
-video-to-ppt -f all -o my_slides
+decksnag -f all -o my_slides
 ```
 
 **Capture from second monitor:**
 ```bash
-video-to-ppt -m 2 -o presentation
+decksnag -m 2 -o presentation
 ```
 
 **List available monitors:**
 ```bash
-video-to-ppt --list-monitors
+decksnag --list-monitors
 ```
 
 ## Configuration
 
 ### Sensitivity Presets
 
+Each comparison method has optimized thresholds for sensitivity presets:
+
+**MSE (Mean Squared Error):**
 | Preset | Threshold | Description |
 |--------|-----------|-------------|
 | `low` | 0.01 | Only detects major slide changes |
 | `medium` | 0.005 | Balanced detection (default) |
 | `high` | 0.001 | Catches subtle changes |
 
-Lower threshold values = more sensitive to changes.
+**SSIM (Structural Similarity):**
+| Preset | Threshold | Description |
+|--------|-----------|-------------|
+| `low` | 0.90 | Only detects major slide changes |
+| `medium` | 0.95 | Balanced detection (default) |
+| `high` | 0.98 | Catches subtle changes |
+
+**CLIP (AI-Powered):**
+| Preset | Threshold | Description |
+|--------|-----------|-------------|
+| `low` | 0.80 | Only detects major content changes |
+| `medium` | 0.85 | Balanced detection (default) |
+| `high` | 0.92 | Catches subtle content changes |
 
 ### Capture Interval
 
@@ -151,30 +232,32 @@ The graphical interface provides:
 - **Settings Panel**:
   - Interval slider (1-30 seconds)
   - Sensitivity dropdown (Low/Medium/High)
+  - Comparison method selection (MSE/SSIM/CLIP AI)
   - Output format selection
 - **Live Preview** - Thumbnails of captured slides
 - **Progress Tracking** - Slide count and elapsed time
 - **Start/Stop Controls** - Easy capture management
+- **Mini Mode** - Compact floating widget during capture
 
 ## How It Works
 
 1. **Region Selection**: You select an area of your screen to monitor
 2. **Initial Capture**: Takes a screenshot of the selected region
 3. **Continuous Monitoring**: Every N seconds, takes a new screenshot
-4. **Change Detection**: Compares new screenshot to previous using Mean Squared Error (MSE)
+4. **Change Detection**: Compares new screenshot to previous using selected method (MSE, SSIM, or CLIP)
 5. **Slide Addition**: If change exceeds threshold, adds new slide to presentation
 6. **Export**: Saves to your chosen format when you stop capture
 
 ## API Usage
 
-You can also use Video to PowerPoint as a Python library:
+You can also use DeckSnag as a Python library:
 
 ```python
-from video_to_powerpoint import ScreenCapture, ImageComparator, PresentationManager
+from decksnag import ScreenCapture, ImageComparator, PresentationManager
 
 # Initialize components
 capture = ScreenCapture()
-comparator = ImageComparator(threshold=0.005)
+comparator = ImageComparator(method="clip")  # Use AI-powered detection
 presentation = PresentationManager()
 
 # Select region interactively
@@ -197,6 +280,16 @@ if comparator.is_different(previous, current):
 presentation.save()
 ```
 
+### Available Classes
+
+| Class | Description |
+|-------|-------------|
+| `ScreenCapture` | Multi-monitor screen capture with region selection |
+| `ImageComparator` | Image comparison with MSE, SSIM, or CLIP methods |
+| `PresentationManager` | PowerPoint creation and slide management |
+| `Exporter` | Export to multiple formats (PDF, images) |
+| `Config` | Configuration management |
+
 ## Requirements
 
 - Python 3.9 or higher
@@ -205,9 +298,11 @@ presentation.save()
   - `pynput` - Keyboard/mouse input handling
   - `Pillow` - Image processing
   - `python-pptx` - PowerPoint file creation
-  - `scikit-image` - Image comparison
+  - `scikit-image` - Image comparison (MSE, SSIM)
   - `customtkinter` - Modern GUI framework
   - `img2pdf` - PDF export
+  - `sentence-transformers` - CLIP model for AI-powered comparison
+  - `torch` - PyTorch for neural network inference
 
 ## Building Standalone Executable
 
@@ -215,7 +310,7 @@ Create a standalone executable that doesn't require Python:
 
 ```bash
 pip install pyinstaller
-pyinstaller video_to_powerpoint.spec
+pyinstaller decksnag.spec
 ```
 
 The executable will be in the `dist/` folder.
@@ -241,10 +336,10 @@ pip install -e ".[dev]"
 pytest
 
 # Run linting
-ruff check video_to_powerpoint/
+ruff check decksnag/
 
 # Format code
-black video_to_powerpoint/ tests/
+black decksnag/ tests/
 ```
 
 ## Troubleshooting
@@ -254,11 +349,13 @@ black video_to_powerpoint/ tests/
 - Make sure the capture region covers the entire slide area
 - Try increasing sensitivity (use `-s high` or lower threshold)
 - Check that the presentation is actually changing slides
+- Try using CLIP method (`-M clip`) for better detection
 
 ### "Too many slides captured"
 
 - Decrease sensitivity (use `-s low` or higher threshold)
 - Increase the capture interval (`-i 10`)
+- Use CLIP method (`-M clip`) to ignore visual noise
 
 ### Region selection doesn't work
 
@@ -271,10 +368,16 @@ black video_to_powerpoint/ tests/
 - Ensure CustomTkinter is installed: `pip install customtkinter`
 - On Linux, install Tk: `sudo apt-get install python3-tk`
 
+### CLIP model is slow to start
+
+- The first time you use CLIP, it downloads the model (~350MB)
+- Subsequent runs use the cached model and start faster
+- Consider using SSIM for quick captures where AI isn't needed
+
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/dplem/Video-to-PowerPoint/issues)
-- **Email**: plemons.derek@gmail.com
+- **Issues**: [GitHub Issues](https://github.com/foxintheloop/DeckSnag/issues)
+- **Repository**: [github.com/foxintheloop/DeckSnag](https://github.com/foxintheloop/DeckSnag)
 
 ## License
 
@@ -282,6 +385,7 @@ This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.t
 
 ## Acknowledgments
 
-- Original concept and initial implementation by Derek Plemons
+- Built with [CLIP](https://github.com/openai/CLIP) for AI-powered image understanding
+- Uses [sentence-transformers](https://www.sbert.net/) for efficient CLIP inference
 - Built with [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) for the modern GUI
 - Uses [python-pptx](https://python-pptx.readthedocs.io/) for PowerPoint generation

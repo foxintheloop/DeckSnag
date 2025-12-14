@@ -1,4 +1,4 @@
-"""Command-line interface for Video to PowerPoint."""
+"""Command-line interface for DeckSnag."""
 
 import argparse
 import sys
@@ -8,15 +8,15 @@ from pathlib import Path
 from typing import Optional, Tuple
 from pynput import keyboard
 
-from video_to_powerpoint import __version__
-from video_to_powerpoint.config import Config
-from video_to_powerpoint.capture import ScreenCapture
-from video_to_powerpoint.comparison import ImageComparator
-from video_to_powerpoint.presentation import PresentationManager
-from video_to_powerpoint.exporter import Exporter
-from video_to_powerpoint.utils import setup_logging, format_duration
+from decksnag import __version__
+from decksnag.config import Config
+from decksnag.capture import ScreenCapture
+from decksnag.comparison import ImageComparator
+from decksnag.presentation import PresentationManager
+from decksnag.exporter import Exporter
+from decksnag.utils import setup_logging, format_duration
 
-logger = logging.getLogger("video_to_powerpoint")
+logger = logging.getLogger("decksnag")
 
 
 def parse_region(region_str: str) -> Tuple[int, int, int, int]:
@@ -46,23 +46,29 @@ def parse_region(region_str: str) -> Tuple[int, int, int, int]:
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser."""
     parser = argparse.ArgumentParser(
-        prog="video-to-ppt",
+        prog="decksnag",
         description="Capture video presentations and convert them to PowerPoint slides.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  video-to-ppt                          # Interactive mode with defaults
-  video-to-ppt -o slides.pptx           # Specify output file
-  video-to-ppt -i 3 -t 0.01             # 3 second interval, less sensitive
-  video-to-ppt -f pdf -o presentation   # Export as PDF
-  video-to-ppt --list-monitors          # Show available monitors
-  video-to-ppt -m 2                     # Capture from monitor 2
-  video-to-ppt --gui                    # Launch graphical interface
+  decksnag                            # Interactive mode with defaults
+  decksnag -o slides.pptx             # Specify output file
+  decksnag -i 3 -t 0.01               # 3 second interval, less sensitive
+  decksnag -f pdf -o presentation     # Export as PDF
+  decksnag --list-monitors            # Show available monitors
+  decksnag -m 2                       # Capture from monitor 2
+  decksnag -M clip                    # Use AI-powered comparison
+  decksnag --gui                      # Launch graphical interface
 
 Sensitivity presets:
-  low     (0.01)  - Only major slide changes
-  medium  (0.005) - Balanced (default)
-  high    (0.001) - Catches subtle changes
+  low     - Only major slide changes
+  medium  - Balanced (default)
+  high    - Catches subtle changes
+
+Comparison methods:
+  mse   - Mean Squared Error (fast, default)
+  ssim  - Structural Similarity Index (fast, better perceptual)
+  clip  - CLIP AI embeddings (accurate, uses neural network)
         """,
     )
 
@@ -108,6 +114,14 @@ Sensitivity presets:
         choices=["low", "medium", "high"],
         metavar="PRESET",
         help="Sensitivity preset (overrides --threshold)",
+    )
+
+    parser.add_argument(
+        "-M", "--method",
+        choices=["mse", "ssim", "clip"],
+        default="mse",
+        metavar="METHOD",
+        help="Comparison method: mse (fast), ssim (fast), clip (AI-accurate)",
     )
 
     parser.add_argument(
@@ -190,7 +204,7 @@ def run_capture_session(config: Config) -> None:
 
     # Initialize components
     with ScreenCapture() as capture:
-        comparator = ImageComparator(threshold=config.threshold)
+        comparator = ImageComparator(threshold=config.threshold, method=config.method)
         presentation = PresentationManager()
         exporter = Exporter()
 
@@ -211,7 +225,8 @@ def run_capture_session(config: Config) -> None:
         print("=" * 50)
         print(f"Press '{config.stop_hotkey.upper()}' key to stop capture")
         print(f"Interval: {config.interval} seconds")
-        print(f"Sensitivity: {config.threshold}")
+        print(f"Method: {config.method.upper()}")
+        print(f"Threshold: {config.threshold}")
         print(f"Output: {output_path}")
         print("=" * 50 + "\n")
 
@@ -304,19 +319,25 @@ def main(args: Optional[list[str]] = None) -> int:
 
     if parsed.gui:
         try:
-            from video_to_powerpoint.gui import main as gui_main
+            from decksnag.gui import main as gui_main
             gui_main()
             return 0
         except ImportError as e:
             logger.error(f"GUI not available: {e}")
             print("Error: GUI dependencies not installed.")
-            print("Install with: pip install video-to-powerpoint[gui]")
+            print("Install with: pip install decksnag")
             return 1
 
     # Build configuration
+    method = parsed.method
     threshold = parsed.threshold
+
+    # If sensitivity preset is used, get appropriate threshold for the method
     if parsed.sensitivity:
-        threshold = ImageComparator.threshold_from_sensitivity(parsed.sensitivity)
+        threshold = ImageComparator.threshold_from_sensitivity(parsed.sensitivity, method)
+    elif method != "mse":
+        # Use default threshold for the method if not explicitly set
+        threshold = ImageComparator.DEFAULT_THRESHOLDS.get(method, threshold)
 
     try:
         config = Config(
@@ -324,6 +345,7 @@ def main(args: Optional[list[str]] = None) -> int:
             output_format=parsed.format,
             interval=parsed.interval,
             threshold=threshold,
+            method=method,
             stop_hotkey=parsed.hotkey,
             monitor=parsed.monitor,
             region=parsed.region,

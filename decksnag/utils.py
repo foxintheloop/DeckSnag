@@ -1,4 +1,4 @@
-"""Utility functions for Video to PowerPoint."""
+"""Utility functions for DeckSnag."""
 
 import logging
 import sys
@@ -16,7 +16,7 @@ def setup_logging(verbose: bool = False, log_file: Optional[Path] = None) -> log
     Returns:
         Configured logger instance.
     """
-    logger = logging.getLogger("video_to_powerpoint")
+    logger = logging.getLogger("decksnag")
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     # Clear any existing handlers

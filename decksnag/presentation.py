@@ -8,7 +8,7 @@ from PIL import Image
 from pptx import Presentation
 from pptx.util import Inches
 
-logger = logging.getLogger("video_to_powerpoint")
+logger = logging.getLogger("decksnag")
 
 
 class PresentationManager:

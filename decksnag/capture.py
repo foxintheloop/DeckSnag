@@ -8,7 +8,7 @@ import mss
 import mss.tools
 from pynput import mouse
 
-logger = logging.getLogger("video_to_powerpoint")
+logger = logging.getLogger("decksnag")
 
 
 @dataclass

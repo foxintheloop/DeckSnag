@@ -10,15 +10,15 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
-from video_to_powerpoint import __version__
-from video_to_powerpoint.config import Config
-from video_to_powerpoint.capture import ScreenCapture
-from video_to_powerpoint.comparison import ImageComparator
-from video_to_powerpoint.presentation import PresentationManager
-from video_to_powerpoint.exporter import Exporter
-from video_to_powerpoint.utils import setup_logging, format_duration
+from decksnag import __version__
+from decksnag.config import Config
+from decksnag.capture import ScreenCapture
+from decksnag.comparison import ImageComparator
+from decksnag.presentation import PresentationManager
+from decksnag.exporter import Exporter
+from decksnag.utils import setup_logging, format_duration
 
-logger = logging.getLogger("video_to_powerpoint")
+logger = logging.getLogger("decksnag")
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("System")  # Modes: "System", "Dark", "Light"
@@ -338,13 +338,13 @@ class RegionOverlay:
         return self._visible
 
 
-class VideoToPowerPointApp(ctk.CTk):
+class DeckSnagApp(ctk.CTk):
     """Main application window."""
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.title(f"Video to PowerPoint v{__version__}")
+        self.title(f"DeckSnag v{__version__}")
         self.geometry("900x700")
         self.minsize(800, 600)
 
@@ -395,7 +395,7 @@ class VideoToPowerPointApp(ctk.CTk):
 
         title = ctk.CTkLabel(
             header,
-            text="Video to PowerPoint",
+            text="DeckSnag",
             font=ctk.CTkFont(size=24, weight="bold"),
         )
         title.pack(side="left", padx=10, pady=10)
@@ -504,6 +504,18 @@ class VideoToPowerPointApp(ctk.CTk):
             state="readonly",
         )
         self.sensitivity_dropdown.pack(side="left", padx=(0, 20))
+
+        # Comparison method
+        ctk.CTkLabel(row2, text="Method:").pack(side="left", padx=(0, 5))
+        self.method_var = ctk.StringVar(value="MSE (Fast)")
+        self.method_dropdown = ctk.CTkComboBox(
+            row2,
+            variable=self.method_var,
+            values=["MSE (Fast)", "SSIM (Fast)", "CLIP AI (Accurate)"],
+            width=150,
+            state="readonly",
+        )
+        self.method_dropdown.pack(side="left", padx=(0, 20))
 
         # Row 3: Output settings
         row3 = ctk.CTkFrame(settings, fg_color="transparent")
@@ -675,10 +687,20 @@ class VideoToPowerPointApp(ctk.CTk):
             return "all"
         return "pptx"
 
+    def _get_comparison_method(self) -> str:
+        """Get comparison method from dropdown selection."""
+        method_map = {
+            "MSE (Fast)": "mse",
+            "SSIM (Fast)": "ssim",
+            "CLIP AI (Accurate)": "clip",
+        }
+        return method_map.get(self.method_var.get(), "mse")
+
     def _get_threshold(self) -> float:
-        """Get threshold from sensitivity setting."""
+        """Get threshold from sensitivity setting and comparison method."""
         sensitivity = self.sensitivity_var.get().lower()
-        return ImageComparator.threshold_from_sensitivity(sensitivity)
+        method = self._get_comparison_method()
+        return ImageComparator.threshold_from_sensitivity(sensitivity, method)
 
     def _set_status(self, text: str) -> None:
         """Update status bar text."""
@@ -746,8 +768,11 @@ class VideoToPowerPointApp(ctk.CTk):
                 region=self._region,
             )
 
+            # Get comparison method
+            method = self._get_comparison_method()
+
             with ScreenCapture() as capture:
-                comparator = ImageComparator(threshold=config.threshold)
+                comparator = ImageComparator(threshold=config.threshold, method=method)
                 presentation = PresentationManager()
                 exporter = Exporter()
 
@@ -778,7 +803,8 @@ class VideoToPowerPointApp(ctk.CTk):
 
         except Exception as e:
             logger.error(f"Capture error: {e}")
-            self.after(0, lambda: messagebox.showerror("Error", f"Capture failed: {e}"))
+            error_msg = str(e)
+            self.after(0, lambda: messagebox.showerror("Error", f"Capture failed: {error_msg}"))
 
         finally:
             self.after(0, self._capture_finished)
@@ -853,7 +879,8 @@ class VideoToPowerPointApp(ctk.CTk):
 
         except Exception as e:
             logger.error(f"Save error: {e}")
-            self.after(0, lambda: messagebox.showerror("Error", f"Failed to save: {e}"))
+            error_msg = str(e)
+            self.after(0, lambda: messagebox.showerror("Error", f"Failed to save: {error_msg}"))
 
     def _capture_finished(self) -> None:
         """Called when capture is complete."""
@@ -950,7 +977,7 @@ class VideoToPowerPointApp(ctk.CTk):
 
 def main() -> None:
     """Launch the GUI application."""
-    app = VideoToPowerPointApp()
+    app = DeckSnagApp()
     app.mainloop()
 
 
