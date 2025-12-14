@@ -54,9 +54,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dplem/Video-to-PowerPoint"
-Repository = "https://github.com/dplem/Video-to-PowerPoint"
-Issues = "https://github.com/dplem/Video-to-PowerPoint/issues"
+Homepage = "https://github.com/foxintheloop/DeckSnag"
+Repository = "https://github.com/foxintheloop/DeckSnag"
+Issues = "https://github.com/foxintheloop/DeckSnag/issues"
 
 [project.scripts]
 decksnag = "decksnag.cli:main"
