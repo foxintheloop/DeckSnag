@@ -4,7 +4,7 @@ import threading
 import time
 import logging
 from pathlib import Path
-from typing import Optional, Tuple, List, Callable
+from typing import Any, Dict, Optional, Tuple, List, Callable
 from PIL import Image, ImageTk
 import customtkinter as ctk
 import tkinter as tk
@@ -17,12 +17,45 @@ from decksnag.comparison import ImageComparator
 from decksnag.presentation import PresentationManager
 from decksnag.exporter import Exporter
 from decksnag.utils import setup_logging, format_duration
+from decksnag.config_file import (
+    load_config_file,
+    save_config_file,
+    ensure_config_dir,
+    get_user_config_dir,
+)
 
 logger = logging.getLogger("decksnag")
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("System")  # Modes: "System", "Dark", "Light"
 ctk.set_default_color_theme("blue")  # Themes: "blue", "green", "dark-blue"
+
+# GUI settings file (separate from main config for GUI-specific settings)
+GUI_SETTINGS_FILE = "gui_settings.toml"
+
+
+def get_gui_settings_path() -> Path:
+    """Get the path to the GUI settings file."""
+    return get_user_config_dir() / GUI_SETTINGS_FILE
+
+
+def load_gui_settings() -> Dict[str, Any]:
+    """Load GUI settings from the settings file.
+
+    Returns:
+        Dictionary of GUI settings.
+    """
+    return load_config_file(get_gui_settings_path())
+
+
+def save_gui_settings(settings: Dict[str, Any]) -> None:
+    """Save GUI settings to the settings file.
+
+    Args:
+        settings: Dictionary of settings to save.
+    """
+    ensure_config_dir()
+    save_config_file(settings, get_gui_settings_path())
 
 
 class MiniModeWindow(ctk.CTkToplevel):
@@ -345,7 +378,6 @@ class DeckSnagApp(ctk.CTk):
         super().__init__()
 
         self.title(f"DeckSnag v{__version__}")
-        self.geometry("900x700")
         self.minsize(800, 600)
 
         # State
@@ -369,6 +401,12 @@ class DeckSnagApp(ctk.CTk):
         # Create UI
         self._create_widgets()
         self._update_monitor_list()
+
+        # Load saved settings and apply to UI
+        self._load_settings()
+
+        # Bind window close event to save settings
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _create_widgets(self) -> None:
         """Create all UI widgets."""
@@ -973,6 +1011,123 @@ class DeckSnagApp(ctk.CTk):
                 self._mini_mode.update_slide_count(len(self._slides))
             except Exception:
                 pass  # Window might be closing
+
+    def _load_settings(self) -> None:
+        """Load saved GUI settings and apply to UI."""
+        try:
+            settings = load_gui_settings()
+            if not settings:
+                # No saved settings, use defaults
+                self.geometry("900x700")
+                return
+
+            # Restore window geometry
+            geometry = settings.get("window_geometry")
+            if geometry:
+                self.geometry(geometry)
+            else:
+                self.geometry("900x700")
+
+            # Restore output path
+            output_path = settings.get("output_path")
+            if output_path:
+                self.output_var.set(output_path)
+
+            # Restore interval
+            interval = settings.get("interval")
+            if interval is not None:
+                self.interval_var.set(float(interval))
+                self.interval_label.configure(text=f"{float(interval):.1f}s")
+
+            # Restore sensitivity
+            sensitivity = settings.get("sensitivity")
+            if sensitivity and sensitivity in ["Low", "Medium", "High"]:
+                self.sensitivity_var.set(sensitivity)
+
+            # Restore comparison method
+            method = settings.get("method")
+            method_map = {
+                "mse": "MSE (Fast)",
+                "ssim": "SSIM (Fast)",
+                "clip": "CLIP AI (Accurate)",
+            }
+            if method and method in method_map:
+                self.method_var.set(method_map[method])
+
+            # Restore output format
+            output_format = settings.get("output_format")
+            format_map = {
+                "pptx": "PowerPoint (.pptx)",
+                "pdf": "PDF (.pdf)",
+                "images": "Images (folder)",
+                "all": "All formats",
+            }
+            if output_format and output_format in format_map:
+                self.format_var.set(format_map[output_format])
+
+            logger.info("Loaded GUI settings")
+
+        except Exception as e:
+            logger.warning(f"Failed to load GUI settings: {e}")
+            self.geometry("900x700")
+
+    def _save_settings(self) -> None:
+        """Save current GUI settings for persistence."""
+        try:
+            settings: Dict[str, Any] = {}
+
+            # Save window geometry
+            settings["window_geometry"] = self.geometry()
+
+            # Save output path
+            output_path = self.output_var.get().strip()
+            if output_path:
+                settings["output_path"] = output_path
+
+            # Save interval
+            settings["interval"] = self.interval_var.get()
+
+            # Save sensitivity
+            settings["sensitivity"] = self.sensitivity_var.get()
+
+            # Save comparison method
+            method_map = {
+                "MSE (Fast)": "mse",
+                "SSIM (Fast)": "ssim",
+                "CLIP AI (Accurate)": "clip",
+            }
+            settings["method"] = method_map.get(self.method_var.get(), "mse")
+
+            # Save output format
+            format_map = {
+                "PowerPoint (.pptx)": "pptx",
+                "PDF (.pdf)": "pdf",
+                "Images (folder)": "images",
+                "All formats": "all",
+            }
+            settings["output_format"] = format_map.get(self.format_var.get(), "pptx")
+
+            save_gui_settings(settings)
+            logger.info("Saved GUI settings")
+
+        except Exception as e:
+            logger.warning(f"Failed to save GUI settings: {e}")
+
+    def _on_close(self) -> None:
+        """Handle window close event - save settings and exit."""
+        # Stop capture if running
+        if self._is_capturing:
+            self._stop_capture.set()
+
+        # Save settings before closing
+        self._save_settings()
+
+        # Clean up overlays
+        if self._region_overlay is not None:
+            self._region_overlay.destroy()
+
+        # Destroy window
+        self.destroy()
 
 
 def main() -> None:
